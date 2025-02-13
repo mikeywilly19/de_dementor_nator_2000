@@ -1,4 +1,6 @@
-// Ecen 446 Lab 3 Main code
+// Smoke Maker Test code
+
+
 
 
 void setup() {
