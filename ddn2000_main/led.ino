@@ -4,8 +4,7 @@
 
 #define PIR_SENSOR 2
 
-#define DELAY 100
-#define FLASH_COUNT 3
+#define TIME_FLASHING 3000
 
 uint8_t LEDS[3] = {BLUE_PIN, YELLOW_PIN, GREEN_PIN};
 
@@ -25,7 +24,7 @@ void loop() {
   // flash LEDs with motion
   if (digitalRead(PIR_SENSOR)) {
     Serial.println("MOTION!!!");
-    flashLEDs(FLASH_COUNT);
+    flashLEDs(TIME_FLASHING);
   }
   else {
     Serial.println("nothing");
@@ -33,8 +32,10 @@ void loop() {
 }
 
 // repeatedly flash each LED color individually a certain number of cycles
-void flashLEDs(uint8_t flashCount) {
-  for (uint8_t i = 0; i < flashCount; i++) {
+void flashLEDs(uint32_t timeOut) {
+  uint32_t time = millis();
+
+  while ((time + timeOut) > millis()) {
     for (uint8_t k = 0; k < 3; k++) {
       digitalWrite(LEDS[k], HIGH);
       delay(DELAY);
