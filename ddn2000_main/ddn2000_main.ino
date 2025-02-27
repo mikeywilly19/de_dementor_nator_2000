@@ -11,7 +11,7 @@
  *            Winter 2025
  *            Steven Schultz
  **************************************/
-#include <AudioExctoPetronum.ino>
+#include <AudioExpectoPetronum.ino>
 
 #define FSM_TICK_FREQ_HZ 100.0
 #define FSM_TICK_PERIOD_MS 1000.0 / FSM_TICK_FREQ_HZ
