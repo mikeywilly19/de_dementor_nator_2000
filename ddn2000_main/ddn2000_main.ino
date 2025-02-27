@@ -11,6 +11,7 @@
  *            Winter 2025
  *            Steven Schultz
  **************************************/
+#include <AudioExctoPetronum.ino>
 
 #define FSM_TICK_FREQ_HZ 100.0
 #define FSM_TICK_PERIOD_MS 1000.0 / FSM_TICK_FREQ_HZ
@@ -31,9 +32,8 @@ typedef enum
   INIT,
   WARMUP,
   WAIT,
-  FOG,
-  LED,
-  SOUND,
+  STARTFOG,
+  STARTSHOW,
   SHUTDOWN
 } fsmState;
 
@@ -76,17 +76,12 @@ void fsmTick()
     // transitions
     if (digitalRead(PIR_SENSOR) || !digitalRead(MANUAL_TRIGGER)) state = FOG;
     break;
-  case FOG:
+  case STARTFOG:
     break;
-  case SOUND:
-    // actions
-    
-    // transitions
-    state = LED;
-    break;
-  case LED:
+  case STARTSHOW:
     // actions
     flashLEDs(TIME_FLASHING);
+
     // transitions
     state = SHUTDOWN;
     break;
