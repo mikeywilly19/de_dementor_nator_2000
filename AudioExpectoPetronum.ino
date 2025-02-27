@@ -9,6 +9,7 @@ SoftwareSerial mySerial(10, 11);
 # define ACTIVATED LOW
 
 boolean isPlaying = false;
+boolean isStarted = false;
 
 int buttonPause = 2;
 int endOfPlay;
@@ -24,6 +25,10 @@ void setup() {
   setVolume(15);
 }
 
+void startAudio() {
+  isStarted = true;
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
 
@@ -35,8 +40,9 @@ void loop() {
     }
   } else {
     //!isPlaying
-    if (digitalRead(buttonPause) == ACTIVATED) {
+    if (isStarted) {
       isPlaying = true;
+      isStarted = false;
       play();
       playNext();
       endOfPlay = millis() + 8000;
