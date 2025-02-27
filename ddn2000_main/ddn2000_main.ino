@@ -15,6 +15,17 @@
 #define FSM_TICK_FREQ_HZ 100.0
 #define FSM_TICK_PERIOD_MS 1000.0 / FSM_TICK_FREQ_HZ
 
+// Pins
+#define BLUE_PIN 5
+#define YELLOW_PIN 4
+#define GREEN_PIN 3
+#define PIR_SENSOR 2
+#define MANUAL_TRIGGER A2
+
+// LED defines (ms)
+#define TIME_FLASHING 3000
+#define FLASH_DURATION 100
+
 typedef enum
 {
   INIT,
@@ -28,7 +39,14 @@ typedef enum
 
 void setup()
 {
-  // Init for all subsystems
+  // set inputs
+  pinMode(PIR_SENSOR, INPUT);
+  pinMode(MANUAL_TRIGGER, INPUT_PULLUP);
+
+  // set outputs
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+  pinMode(YELLOW_PIN, OUTPUT);
 }
 
 void loop()
@@ -57,6 +75,11 @@ void fsmTick()
   case FOG:
     break;
   case LED:
+    // transitions
+    
+    // actions
+    if (digitalRead(PIR_SENSOR) || !digitalRead(MANUAL_TRIGGER)) flashLEDs(TIME_FLASHING); // flash LEDs when triggered
+    
     break;
   case SOUND:
     break;
@@ -64,5 +87,19 @@ void fsmTick()
     break;
   default:
     break;
+  }
+}
+
+// repeatedly flash each LED color individually for a given amount of time
+void flashLEDs(uint32_t timeOut) {
+  uint32_t time = millis();
+
+  while ((time + timeOut) > millis()) {
+    for (uint8_t k = 0; k < 3; k++) {
+      digitalWrite(LEDS[k], HIGH);
+      delay(FLASH_DURATION);
+      digitalWrite(LEDS[k], LOW);
+      delay(FLASH_DURATION);
+    }
   }
 }
