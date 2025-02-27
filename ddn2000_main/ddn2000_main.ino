@@ -69,21 +69,31 @@ void fsmTick()
     state = WARMUP;
     break;
   case WARMUP:
+    
     break;
   case WAIT:
+    // no actions
+    // transitions
+    if (digitalRead(PIR_SENSOR) || !digitalRead(MANUAL_TRIGGER)) state = FOG;
     break;
   case FOG:
     break;
-  case LED:
-    // transitions
-    
-    // actions
-    if (digitalRead(PIR_SENSOR) || !digitalRead(MANUAL_TRIGGER)) flashLEDs(TIME_FLASHING); // flash LEDs when triggered
-    
-    break;
   case SOUND:
+    // actions
+    
+    // transitions
+    state = LED;
+    break;
+  case LED:
+    // actions
+    flashLEDs(TIME_FLASHING);
+    // transitions
+    state = SHUTDOWN;
     break;
   case SHUTDOWN:
+    // no actions
+    // transitions
+    state = WARMUP;
     break;
   default:
     break;
