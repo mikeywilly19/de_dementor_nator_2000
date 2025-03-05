@@ -17,15 +17,20 @@
 #define FSM_TICK_PERIOD_MS 1000.0 / FSM_TICK_FREQ_HZ
 
 // Pins
-#define BLUE_PIN 5
-#define YELLOW_PIN 4
-#define GREEN_PIN 3
+#define FOG_TRIGGER
+#define SOUND_TRIGGER
+#define BLUE 5
+#define YELLOW 4
+#define GREEN 3
+#define RED 
 #define PIR_SENSOR 2
 #define MANUAL_TRIGGER A2
 
 // LED defines (ms)
 #define TIME_FLASHING 3000
 #define FLASH_DURATION 100
+
+#define WARMUP_TIME 10000 // 10s
 
 typedef enum
 {
@@ -47,6 +52,7 @@ void setup()
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
   pinMode(YELLOW_PIN, OUTPUT);
+  pinMode(RED_PIN, OUTPUT);
 }
 
 void loop()
@@ -69,24 +75,33 @@ void fsmTick()
     state = WARMUP;
     break;
   case WARMUP:
-    
+    // wait for warm up time
+    static elapsedTimeMS = 0;
+    elapsedTimeMS += FSM_TICK_PERIOD_MS;
+    if (elapsedTimeMS >= WARMUP_TIME) state = WAIT;
     break;
   case WAIT:
     // no actions
     // transitions
-    if (digitalRead(PIR_SENSOR) || !digitalRead(MANUAL_TRIGGER)) state = FOG;
+    if (digitalRead(PIR_SENSOR) || !digitalRead(MANUAL_TRIGGER)) state = STARTFOG;
     break;
   case STARTFOG:
+    // trigger fog
+    
+    // transition
+    state = STARTSHOW;
     break;
   case STARTSHOW:
     // actions
+    // start sound
     flashLEDs(TIME_FLASHING);
 
     // transitions
     state = SHUTDOWN;
     break;
   case SHUTDOWN:
-    // no actions
+    // stop everything
+    
     // transitions
     state = WARMUP;
     break;
@@ -98,13 +113,30 @@ void fsmTick()
 // repeatedly flash each LED color individually for a given amount of time
 void flashLEDs(uint32_t timeOut) {
   uint32_t time = millis();
+  static bool ledsOn = false;
 
   while ((time + timeOut) > millis()) {
-    for (uint8_t k = 0; k < 3; k++) {
-      digitalWrite(LEDS[k], HIGH);
-      delay(FLASH_DURATION);
-      digitalWrite(LEDS[k], LOW);
-      delay(FLASH_DURATION);
+    if (ledsOn) {
+      // write low
+      digitalWrite(BLUE_PIN, LOW);
+      digitalWrite(YELLOW_PIN, LOW);
+      digitalWrite(GREEN_PIN, LOW);
+      digitalWrite(RED_PIN, LOW);
     }
+    else {
+      // write high
+      digitalWrite(BLUE_PIN, HIGH);
+      digitalWrite(YELLOW_PIN, HIGH);
+      digitalWrite(GREEN_PIN, HIGH);
+      digitalWrite(RED_PIN, HIGH);
+    }
+    ledsOn = !ledsOn;
+    delay(FLASH_DURATION);
   }
+
+  // turn off
+  digitalWrite(BLUE_PIN, LOW);
+  digitalWrite(YELLOW_PIN, LOW);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(RED_PIN, LOW);
 }
