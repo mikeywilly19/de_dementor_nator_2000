@@ -11,7 +11,9 @@
  *            Winter 2025
  *            Steven Schultz
  **************************************/
-#include <AudioExpectoPetronum.ino>
+#include "Speaker.h"
+
+Speaker speaker = Speaker();
 
 #define FSM_TICK_FREQ_HZ 100.0
 #define FSM_TICK_PERIOD_MS 1000.0 / FSM_TICK_FREQ_HZ
@@ -19,10 +21,10 @@
 // Pins
 #define FOG_TRIGGER
 #define SOUND_TRIGGER
-#define BLUE 5
-#define YELLOW 4
-#define GREEN 3
-#define RED 
+#define BLUE_PIN 5
+#define YELLOW_PIN 4
+#define GREEN_PIN 3
+#define RED_PIN 7
 #define PIR_SENSOR 2
 #define MANUAL_TRIGGER A2
 
@@ -30,7 +32,7 @@
 #define TIME_FLASHING 3000
 #define FLASH_DURATION 100
 
-#define WARMUP_TIME 10000 // 10s
+#define WARMUP_TIME 1000 // 10s
 
 typedef enum
 {
@@ -44,6 +46,10 @@ typedef enum
 
 void setup()
 {
+  Serial.begin(9600);
+  delay(1000);
+
+  speaker.setup();
   // set inputs
   pinMode(PIR_SENSOR, INPUT);
   pinMode(MANUAL_TRIGGER, INPUT_PULLUP);
@@ -53,6 +59,9 @@ void setup()
   pinMode(BLUE_PIN, OUTPUT);
   pinMode(YELLOW_PIN, OUTPUT);
   pinMode(RED_PIN, OUTPUT);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop()
@@ -60,6 +69,7 @@ void loop()
   // Simple scheduler to call tick function with constant frequency
   int startTime = millis();
   fsmTick();
+  speaker.tick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
   }
@@ -76,7 +86,7 @@ void fsmTick()
     break;
   case WARMUP:
     // wait for warm up time
-    static elapsedTimeMS = 0;
+    static uint32_t elapsedTimeMS = 0;
     elapsedTimeMS += FSM_TICK_PERIOD_MS;
     if (elapsedTimeMS >= WARMUP_TIME) state = WAIT;
     break;
@@ -93,13 +103,16 @@ void fsmTick()
     break;
   case STARTSHOW:
     // actions
+    digitalWrite(LED_BUILTIN, HIGH);
     // start sound
     flashLEDs(TIME_FLASHING);
+    speaker.start();
 
     // transitions
     state = SHUTDOWN;
     break;
   case SHUTDOWN:
+    digitalWrite(LED_BUILTIN, LOW);
     // stop everything
     
     // transitions
@@ -139,4 +152,5 @@ void flashLEDs(uint32_t timeOut) {
   digitalWrite(YELLOW_PIN, LOW);
   digitalWrite(GREEN_PIN, LOW);
   digitalWrite(RED_PIN, LOW);
+
 }
