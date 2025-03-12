@@ -154,3 +154,9 @@ void flashLEDs(uint32_t timeOut) {
   digitalWrite(RED_PIN, LOW);
 
 }
+
+//************************ Audio ***************************************//
+
+//void tickAudio() {
+//}
+//}

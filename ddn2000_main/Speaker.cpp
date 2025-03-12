@@ -34,7 +34,7 @@ void Speaker::tick() {
     if (isStarted) {
       isPlaying = true;
       isStarted = false;
-      play();
+      playFirst();
       endOfPlay = millis() + 8000;
     }
   }
