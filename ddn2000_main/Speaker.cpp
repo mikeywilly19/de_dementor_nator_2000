@@ -10,7 +10,6 @@ void Speaker::setup() {
   mySerial.begin (9600);
   delay(3000);
   isPlaying = false;
-  setVolume(5);
   pause();
 }
 
@@ -25,7 +24,7 @@ void Speaker::tick() {
 
   //Transitions
   if (isPlaying) {
-    if (endOfPlay == millis()) {
+    if (endOfPlay >= millis()) {
       pause();
       isPlaying = false;
     }
@@ -35,7 +34,7 @@ void Speaker::tick() {
       isPlaying = true;
       isStarted = false;
       playFirst();
-      endOfPlay = millis() + 8000;
+      endOfPlay = millis() + playTime;
     }
   }
 }
@@ -44,11 +43,13 @@ void Speaker::playFirst()
 {
   execute_CMD(0x3F, 0, 0);
   delay(500);
-  setVolume(10);
-  delay(500);
   execute_CMD(0x11,0,1); 
   delay(500);
-  endOfPlay = millis() + 8000;
+  endOfPlay = millis() + playTime;
+}
+
+bool Speaker::getIsPlaying() {
+  return isPlaying;
 }
 
 

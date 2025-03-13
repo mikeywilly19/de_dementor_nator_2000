@@ -16,6 +16,7 @@ class Speaker {
     bool isPlaying = false;
     bool isStarted = false;
     bool isPlayFirst = true;
+    int playTime = 200000;
 
     int buttonPause = 2;
     int endOfPlay;
@@ -35,6 +36,8 @@ class Speaker {
     void playNext();
 
     void setVolume(int volume);
+
+    bool getIsPlaying();
 
     void execute_CMD(uint8_t CMD, uint8_t Par1, uint8_t Par2);
 

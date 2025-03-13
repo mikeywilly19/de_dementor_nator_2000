@@ -15,24 +15,27 @@
 
 Speaker speaker = Speaker();
 
-#define FSM_TICK_FREQ_HZ 100.0
-#define FSM_TICK_PERIOD_MS 1000.0 / FSM_TICK_FREQ_HZ
+#define FSM_TICK_PERIOD_MS 100
 
 // Pins
 #define FOG_TRIGGER
+#define FOG_WARMUP
 #define SOUND_TRIGGER
-#define BLUE_PIN 5
-#define YELLOW_PIN 4
-#define GREEN_PIN 3
-#define RED_PIN 7
-#define PIR_SENSOR 2
-#define MANUAL_TRIGGER A2
+#define BLUE_PIN 3
+#define YELLOW_PIN 5
+#define GREEN_PIN 6
+#define PIR_SENSOR A5
+#define MANUAL_TRIGGER A3
+#define VOLUME 20
+
 
 // LED defines (ms)
 #define TIME_FLASHING 3000
-#define FLASH_DURATION 100
+#define FLASH_DURATION 200
 
-#define WARMUP_TIME 1000 // 10s
+#define WARMUP_TIME 1000 // 1s
+#define FOG_BUILDUP_TIME 1000 //1s
+#define SHOW_TIME_BOUND 10000 //1s (be greater than 201)
 
 typedef enum
 {
@@ -44,12 +47,19 @@ typedef enum
   SHUTDOWN
 } fsmState;
 
+typedef enum
+{
+  ON,
+  OFF
+} ledState;
+
+static bool startLeds;
+
 void setup()
 {
+  // Serial
   Serial.begin(9600);
-  delay(1000);
 
-  speaker.setup();
   // set inputs
   pinMode(PIR_SENSOR, INPUT);
   pinMode(MANUAL_TRIGGER, INPUT_PULLUP);
@@ -58,10 +68,16 @@ void setup()
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
   pinMode(YELLOW_PIN, OUTPUT);
-  pinMode(RED_PIN, OUTPUT);
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
+
+  //speaker setup
+  speaker.setup();
+  speaker.setVolume(VOLUME);
+
+  //LED setup
+  startLeds = false;
 }
 
 void loop()
@@ -70,6 +86,7 @@ void loop()
   int startTime = millis();
   fsmTick();
   speaker.tick();
+  ledTick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
   }
@@ -78,6 +95,8 @@ void loop()
 void fsmTick()
 {
   static fsmState state = INIT;
+  static uint32_t elapsedTimeMS = 0;
+  Serial.print(state);
 
   switch (state)
   {
@@ -85,34 +104,56 @@ void fsmTick()
     state = WARMUP;
     break;
   case WARMUP:
-    // wait for warm up time
-    static uint32_t elapsedTimeMS = 0;
+    //transition
+    if (elapsedTimeMS >= WARMUP_TIME) {
+      state = WAIT;
+      digitalWrite(LED_BUILTIN, HIGH);
+      elapsedTimeMS = 0;
+    }
+
+    //action
     elapsedTimeMS += FSM_TICK_PERIOD_MS;
-    if (elapsedTimeMS >= WARMUP_TIME) state = WAIT;
     break;
   case WAIT:
     // no actions
     // transitions
-    if (digitalRead(PIR_SENSOR) || !digitalRead(MANUAL_TRIGGER)) state = STARTFOG;
+    if (digitalRead(PIR_SENSOR) || digitalRead(MANUAL_TRIGGER)) {
+      state = STARTFOG;
+      //TODO:trigger fog
+//      digitalWrite(FOG_TRIGGER, HIGH);
+      digitalWrite(LED_BUILTIN, LOW);
+    }
     break;
   case STARTFOG:
-    // trigger fog
+    //action
+    elapsedTimeMS += FSM_TICK_PERIOD_MS;
     
-    // transition
-    state = STARTSHOW;
+    //transition
+    if (elapsedTimeMS >= FOG_BUILDUP_TIME) {
+      state = STARTSHOW;
+      elapsedTimeMS = 0;
+
+      //start any state machines (that are asynchronous with timing of show state)
+      speaker.start();
+      startLeds = true;
+    }
+    
     break;
   case STARTSHOW:
-    // actions
-    digitalWrite(LED_BUILTIN, HIGH);
-    // start sound
-    flashLEDs(TIME_FLASHING);
-    speaker.start();
-
-    // transitions
-    state = SHUTDOWN;
+    //action
+    elapsedTimeMS += FSM_TICK_PERIOD_MS;
+    //TODO: fog machine spit out fog
+    
+    
+    //transition
+    if (elapsedTimeMS >= SHOW_TIME_BOUND) {
+      state = SHUTDOWN;
+      elapsedTimeMS = 0;
+      startLeds = false;
+    }
+    
     break;
   case SHUTDOWN:
-    digitalWrite(LED_BUILTIN, LOW);
     // stop everything
     
     // transitions
@@ -124,39 +165,35 @@ void fsmTick()
 }
 
 // repeatedly flash each LED color individually for a given amount of time
-void flashLEDs(uint32_t timeOut) {
-  uint32_t time = millis();
-  static bool ledsOn = false;
+void ledTick() {
+  static ledState lState = OFF;
+  static uint32_t elapsedLedTimeMS = 0;
+  elapsedLedTimeMS += FSM_TICK_PERIOD_MS;
 
-  while ((time + timeOut) > millis()) {
-    if (ledsOn) {
-      // write low
-      digitalWrite(BLUE_PIN, LOW);
-      digitalWrite(YELLOW_PIN, LOW);
-      digitalWrite(GREEN_PIN, LOW);
-      digitalWrite(RED_PIN, LOW);
-    }
-    else {
-      // write high
-      digitalWrite(BLUE_PIN, HIGH);
-      digitalWrite(YELLOW_PIN, HIGH);
-      digitalWrite(GREEN_PIN, HIGH);
-      digitalWrite(RED_PIN, HIGH);
-    }
-    ledsOn = !ledsOn;
-    delay(FLASH_DURATION);
+  switch(lState) {
+    case OFF:
+      if (elapsedLedTimeMS >= FLASH_DURATION && startLeds) {
+        lState = ON;
+        elapsedLedTimeMS = 0;
+        // write high on transition
+        digitalWrite(BLUE_PIN, HIGH);
+        digitalWrite(YELLOW_PIN, HIGH);
+        digitalWrite(GREEN_PIN, HIGH);
+      }
+      break;
+    case ON:
+      // transitions
+      if (elapsedLedTimeMS >= FLASH_DURATION) {
+        lState = OFF;
+        elapsedLedTimeMS = 0;
+        // write low
+        digitalWrite(BLUE_PIN, LOW);
+        digitalWrite(YELLOW_PIN, LOW);
+        digitalWrite(GREEN_PIN, LOW);
+      }
+      
+      break;
+    default:
+      break;
   }
-
-  // turn off
-  digitalWrite(BLUE_PIN, LOW);
-  digitalWrite(YELLOW_PIN, LOW);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(RED_PIN, LOW);
-
 }
-
-//************************ Audio ***************************************//
-
-//void tickAudio() {
-//}
-//}
