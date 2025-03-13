@@ -214,8 +214,7 @@ void fsmTick()
       fogmachineTurnOff();
       speaker.pause();
       ledsFlash(false); //TODO:change the leds
-    }
-    if (!speaker.getIsPlaying() && elapsedTimeMS >= TIME_FLASHING) {
+    } else if (elapsedTimeMS >= SCHED_SHOW_TIME_BOUND) {
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
 
@@ -297,13 +296,15 @@ void fogTick() {
       //transition
       if (!startBuildup) {
         currFogState = FOG_COLD;
+        canReleaseFog = false;
+        elapsedFogTimeMS = 0;
       } else if (elapsedFogTimeMS >= FOG_RELEASE_BOUND) {
         currFogState = FOG_BUILDUP;
         elapsedFogTimeMS = 0;
         canReleaseFog = false;
 
         //TODO:since we just released the buildup time is smaller????
-        buildup_bound = FOG_BUILDUP_BOUND_FROM_RELEASE;
+        buildup_bound = FOG_RELEASE;
       }
 
       //TODO:action (for some duration release the fog (may need to put in transition))
