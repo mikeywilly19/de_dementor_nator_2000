@@ -28,14 +28,22 @@ Speaker speaker = Speaker();
 #define MANUAL_TRIGGER A3
 #define VOLUME 20
 
+// ****** State machinees:
+// Scheduler
+#define SCHED_WARMUP_TIME 1000 // 1s
+#define SCHED_FOG_BUILDUP_TIME 1000 //1s
+#define SCHED_SHOW_TIME_BOUND 10000 //1s (be greater than 201)
+
+//Fog defines
+#define FOG_BUILDUP_BOUND 2000 //2s
+#define FOG_BUILDUP_BOUND_FROM_RELEASE 1000 //1s
+#define FOG_RELEASE_BOUND 2000 //2s
 
 // LED defines (ms)
 #define TIME_FLASHING 3000
 #define FLASH_DURATION 200
 
-#define WARMUP_TIME 1000 // 1s
-#define FOG_BUILDUP_TIME 1000 //1s
-#define SHOW_TIME_BOUND 10000 //1s (be greater than 201)
+//Speaker defines are found in Speaker.h
 
 typedef enum
 {
@@ -53,7 +61,17 @@ typedef enum
   OFF
 } ledState;
 
-static bool startLeds;
+typedef enum
+{
+  FOG_COLD,
+  FOG_BUILDUP,
+  FOG_RELEASE
+} fogState;
+
+static bool flashLeds;
+static bool startBuildup;
+static bool releaseFog;
+static bool canReleaseFog;
 
 void setup()
 {
@@ -72,12 +90,17 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
+  //Fog machine
+  startBuildup = false;
+  releaseFog = false;
+  canReleaseFog = false;
+
   //speaker setup
   speaker.setup();
   speaker.setVolume(VOLUME);
 
   //LED setup
-  startLeds = false;
+  flashLeds = false;
 }
 
 void loop()
@@ -92,11 +115,16 @@ void loop()
   }
 }
 
+//***************************** Scheduler ****************************************
+
+// This defines the scheduler state machine which controls all other 
+// state machines involved in the project including leds, fog and sound.
+// (these other state machines are implemented in their respective tick functions)
+// This state machine is ticked at a rate of FSM_TICK_PERIOD_MS
 void fsmTick()
 {
   static fsmState state = INIT;
   static uint32_t elapsedTimeMS = 0;
-  Serial.print(state);
 
   switch (state)
   {
@@ -105,7 +133,7 @@ void fsmTick()
     break;
   case WARMUP:
     //transition
-    if (elapsedTimeMS >= WARMUP_TIME) {
+    if (elapsedTimeMS >= SCHED_WARMUP_TIME) {
       state = WAIT;
       digitalWrite(LED_BUILTIN, HIGH);
       elapsedTimeMS = 0;
@@ -129,13 +157,13 @@ void fsmTick()
     elapsedTimeMS += FSM_TICK_PERIOD_MS;
     
     //transition
-    if (elapsedTimeMS >= FOG_BUILDUP_TIME) {
+    if (elapsedTimeMS >= SCHED_FOG_BUILDUP_TIME) {
       state = STARTSHOW;
       elapsedTimeMS = 0;
 
       //start any state machines (that are asynchronous with timing of show state)
       speaker.start();
-      startLeds = true;
+      flashLeds = true;
     }
     
     break;
@@ -146,10 +174,10 @@ void fsmTick()
     
     
     //transition
-    if (elapsedTimeMS >= SHOW_TIME_BOUND) {
+    if (elapsedTimeMS >= SCHED_SHOW_TIME_BOUND) {
       state = SHUTDOWN;
       elapsedTimeMS = 0;
-      startLeds = false;
+      flashLeds = false;
     }
     
     break;
@@ -164,7 +192,94 @@ void fsmTick()
   }
 }
 
-// repeatedly flash each LED color individually for a given amount of time
+//************************* FOG MACHINE **********************************
+
+//Fog state machine:
+//Desc: Starts with the fog machine being turned off and cold.
+//      In response to the startBuildup and triggerFog variables
+//      this state machine will start warming up and spew fog respectivley.
+void fogTick() {
+
+  //variables
+  static fogState currFogState = FOG_COLD;
+  static uint32_t elapsedFogTimeMS = 0;
+  static uint32_t buildup_bound = FOG_BUILDUP_BOUND;
+  
+  //always keep track of how much time has passed (since last initialized to 0)
+  elapsedFogTimeMS += FSM_TICK_PERIOD_MS;
+
+  switch(currFogState) {
+    case FOG_COLD:
+      //transition
+      if (startBuildup) {
+        currFogState = FOG_BUILDUP;
+        elapsedFogTimeMS = 0;
+        canReleaseFog = false;
+
+        //buildup time is normal
+        buildup_bound = FOG_BUILDUP_BOUND;
+      }
+
+      //action: stay in here until the fog machine is needed
+
+      break;
+    case FOG_BUILDUP:
+      //transition
+      if (!startBuildup) {
+        currFogState = FOG_COLD;
+      } else if (releaseFog) {
+        currFogState = FOG_RELEASE;
+        elapsedFogTimeMS = 0;
+      }
+
+      //action
+      if (elapsedFogTimeMS >= buildup_bound) {
+        canReleaseFog = true;
+      }
+      //TODO:turn on the fog machine warm up system (may need to put in transition)
+
+      break;
+    case FOG_RELEASE:
+      //transition
+      if (!startBuildup) {
+        currFogState = FOG_COLD;
+      } else if (elapsedFogTimeMS >= FOG_RELEASE_BOUND) {
+        currFogState = FOG_BUILDUP;
+        elapsedFogTimeMS = 0;
+        canReleaseFog = false;
+
+        //TODO:since we just released the buildup time is smaller????
+        buildup_bound = FOG_BUILDUP_BOUND_FROM_RELEASE;
+      }
+
+      //TODO:action (for some duration release the fog (may need to put in transition))
+
+      break;
+    default:
+      break;
+  }
+}
+
+void fogmachineTurnOn() {
+  startBuildup = true;
+}
+
+void fogmachineReleaseFog() {
+  if (canReleaseFog) {
+    releaseFog = true;
+  }
+  //else there is no notification that there can't be a release for fog
+}
+
+void fogmachineTurnOff() {
+  startBuildup = false;
+}
+
+//***************************** LEDS *************************************
+
+//LED state machine:
+//Desc: Initially is turned off until the variable flashLeds is set true.
+//      Once flashLeds is set true, the leds flash until flashLeds is set to false.
 void ledTick() {
   static ledState lState = OFF;
   static uint32_t elapsedLedTimeMS = 0;
@@ -172,7 +287,7 @@ void ledTick() {
 
   switch(lState) {
     case OFF:
-      if (elapsedLedTimeMS >= FLASH_DURATION && startLeds) {
+      if (elapsedLedTimeMS >= FLASH_DURATION && flashLeds) {
         lState = ON;
         elapsedLedTimeMS = 0;
         // write high on transition
@@ -197,3 +312,5 @@ void ledTick() {
       break;
   }
 }
+
+//*************************************************************************
