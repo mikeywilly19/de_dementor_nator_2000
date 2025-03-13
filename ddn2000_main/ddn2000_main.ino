@@ -163,7 +163,7 @@ void fsmTick()
 
       //start any state machines (that are asynchronous with timing of show state)
       speaker.start();
-      flashLeds = true;
+      ledsFlash(true);
     }
     
     break;
@@ -177,7 +177,7 @@ void fsmTick()
     if (elapsedTimeMS >= SCHED_SHOW_TIME_BOUND) {
       state = SHUTDOWN;
       elapsedTimeMS = 0;
-      flashLeds = false;
+      ledsFlash(false);
     }
     
     break;
@@ -298,7 +298,7 @@ void ledTick() {
       break;
     case ON:
       // transitions
-      if (elapsedLedTimeMS >= FLASH_DURATION) {
+      if (elapsedLedTimeMS >= FLASH_DURATION || !flashLeds) {
         lState = OFF;
         elapsedLedTimeMS = 0;
         // write low
@@ -310,6 +310,14 @@ void ledTick() {
       break;
     default:
       break;
+  }
+}
+
+void ledsFlash(bool turnOn) {
+  flashLeds = turnOn;
+  if (flashLeds == false) {
+    //Tick the state machine once to update the lights
+    ledTick();
   }
 }
 
