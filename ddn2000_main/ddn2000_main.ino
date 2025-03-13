@@ -33,6 +33,7 @@ Speaker speaker = Speaker();
 #define SCHED_WARMUP_TIME 1000 // 1s
 #define SCHED_FOG_BUILDUP_TIME 1000 //1s
 #define SCHED_SHOW_TIME_BOUND 10000 //1s (be greater than 201)
+#define SCHED_FOG_RELEASE_TIME 1000 //1s
 
 //Fog defines
 #define FOG_BUILDUP_BOUND 2000 //2s
@@ -68,10 +69,13 @@ typedef enum
   FOG_RELEASE
 } fogState;
 
-static bool flashLeds;
+//Fog state machine global variables
 static bool startBuildup;
 static bool releaseFog;
 static bool canReleaseFog;
+
+//Leds state machine global variables
+static bool flashLeds;
 
 void setup()
 {
@@ -110,6 +114,7 @@ void loop()
   fsmTick();
   speaker.tick();
   ledTick();
+  fogTick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
   }
@@ -124,68 +129,101 @@ void loop()
 void fsmTick()
 {
   static fsmState state = INIT;
+  static bool isMachineOn = false;
   static uint32_t elapsedTimeMS = 0;
+
+  //TODO: update isMachineOn with the value of a switch (not a fixed value)
+  isMachineOn = true;
 
   switch (state)
   {
   case INIT:
-    state = WARMUP;
+    if (isMachineOn) {
+      state = WARMUP;
+      fogmachineTurnOn();
+    } else {
+      state = SHUTDOWN;
+    }
+    
     break;
   case WARMUP:
+    //warm up the fog machine until it is ready to be released
     //transition
-    if (elapsedTimeMS >= SCHED_WARMUP_TIME) {
+    if (fogmachineGetCanRelease()) {
       state = WAIT;
-      digitalWrite(LED_BUILTIN, HIGH);
       elapsedTimeMS = 0;
+
+      //User notification that we can release fog
+      digitalWrite(LED_BUILTIN, HIGH);
     }
 
-    //action
-    elapsedTimeMS += FSM_TICK_PERIOD_MS;
+    //action: wait for the fog machine to warm up
+    
     break;
   case WAIT:
-    // no actions
     // transitions
     if (digitalRead(PIR_SENSOR) || digitalRead(MANUAL_TRIGGER)) {
+      //Someone walked by, start to trigger show
       state = STARTFOG;
-      //TODO:trigger fog
-//      digitalWrite(FOG_TRIGGER, HIGH);
+      fogmachineReleaseFog();
+      elapsedTimeMS = 0;
+
+      //Stop giving User notification as we release fog
       digitalWrite(LED_BUILTIN, LOW);
     }
+
+    // no actions
+    
     break;
   case STARTFOG:
-    //action
-    elapsedTimeMS += FSM_TICK_PERIOD_MS;
-    
     //transition
-    if (elapsedTimeMS >= SCHED_FOG_BUILDUP_TIME) {
+    if (elapsedTimeMS >= SCHED_FOG_RELEASE_TIME) {
       state = STARTSHOW;
       elapsedTimeMS = 0;
 
-      //start any state machines (that are asynchronous with timing of show state)
+      //start speakers and leds
       speaker.start();
+      ledsStart();
+
+      //TODO:get rid of later
       ledsFlash(true);
+      elapsedTimeMS = 0;
     }
+
+    //action: wait for fog to release + amount of time for delaying the show
+    elapsedTimeMS += FSM_TICK_PERIOD_MS;
     
     break;
   case STARTSHOW:
-    //action
-    elapsedTimeMS += FSM_TICK_PERIOD_MS;
-    //TODO: fog machine spit out fog
-    
+    //In this state the fog should have already released and the
+    //  speaker and leds have been notified to begin their show
     
     //transition
-    if (elapsedTimeMS >= SCHED_SHOW_TIME_BOUND) {
-      state = SHUTDOWN;
-      elapsedTimeMS = 0;
+    if (!speaker.getIsPlaying() && elapsedTimeMS >= TIME_FLASHING) {
+      //finished show, go back to warmup for next show (since the machine is still on)
+      state = WARMUP;
+
+      //TODO:get rid of later and add && !ledsIsFlashing()
       ledsFlash(false);
     }
     
+    //action: wait for all state machines to do their thing
+    elapsedTimeMS += FSM_TICK_PERIOD_MS;
+    
     break;
   case SHUTDOWN:
-    // stop everything
+    // stop everything on entering this state 
+    // (this is also initially where everything is off)
     
-    // transitions
-    state = WARMUP;
+    //transition
+    if (isMachineOn) {
+      //start warming up the fog machine for operation
+      state = WARMUP;
+      fogmachineTurnOn();
+    }
+
+    //action: machine is off, do nothing
+    
     break;
   default:
     break;
@@ -271,6 +309,10 @@ void fogmachineReleaseFog() {
   //else there is no notification that there can't be a release for fog
 }
 
+bool fogmachineGetCanRelease() {
+  return canReleaseFog;
+}
+
 void fogmachineTurnOff() {
   startBuildup = false;
 }
@@ -319,6 +361,14 @@ void ledsFlash(bool turnOn) {
     //Tick the state machine once to update the lights
     ledTick();
   }
+}
+
+bool ledsIsFlashing() {
+  return flashLeds;
+}
+
+void ledsStart() {
+  //the start of a controller for the leds (because leds should be seperate from the scheduler)
 }
 
 //*************************************************************************
