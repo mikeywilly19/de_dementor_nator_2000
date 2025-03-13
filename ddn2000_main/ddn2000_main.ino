@@ -149,7 +149,10 @@ void fsmTick()
   case WARMUP:
     //warm up the fog machine until it is ready to be released
     //transition
-    if (fogmachineGetCanRelease()) {
+    if (!isMachineOn) {
+      state = SHUTDOWN;
+      fogmachineTurnOff();
+    } else if (fogmachineGetCanRelease()) {
       state = WAIT;
       elapsedTimeMS = 0;
 
@@ -162,7 +165,10 @@ void fsmTick()
     break;
   case WAIT:
     // transitions
-    if (digitalRead(PIR_SENSOR) || digitalRead(MANUAL_TRIGGER)) {
+    if (!isMachineOn) {
+      state = SHUTDOWN;
+      fogmachineTurnOff();
+    } else if (digitalRead(PIR_SENSOR) || digitalRead(MANUAL_TRIGGER)) {
       //Someone walked by, start to trigger show
       state = STARTFOG;
       fogmachineReleaseFog();
@@ -177,7 +183,10 @@ void fsmTick()
     break;
   case STARTFOG:
     //transition
-    if (elapsedTimeMS >= SCHED_FOG_RELEASE_TIME) {
+    if (!isMachineOn) {
+      state = SHUTDOWN;
+      fogmachineTurnOff();
+    } else if (elapsedTimeMS >= SCHED_FOG_RELEASE_TIME) {
       state = STARTSHOW;
       elapsedTimeMS = 0;
 
@@ -199,6 +208,13 @@ void fsmTick()
     //  speaker and leds have been notified to begin their show
     
     //transition
+    if (!isMachineOn) {
+      //forcefully end all speaker, fog and led show stuff
+      state = SHUTDOWN;
+      fogmachineTurnOff();
+      speaker.pause();
+      ledsFlash(false); //TODO:change the leds
+    }
     if (!speaker.getIsPlaying() && elapsedTimeMS >= TIME_FLASHING) {
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
