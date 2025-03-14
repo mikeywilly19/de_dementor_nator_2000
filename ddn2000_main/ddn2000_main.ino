@@ -11,9 +11,7 @@
  *            Winter 2025
  *            Steven Schultz
  **************************************/
-#include "Speaker.h"
-
-Speaker speaker = Speaker();
+#include "SoftwareSerial.h"
 
 #define FSM_TICK_PERIOD_MS 100
 
@@ -45,7 +43,13 @@ Speaker speaker = Speaker();
 #define FLASH_DURATION 200
 #define LED_ON_TIME 5000 //5s
 
-//Speaker defines are found in Speaker.h
+//Speaker
+# define Start_Byte 0x7E
+# define Version_Byte 0xFF
+# define Command_Length 0x06
+# define End_Byte 0xEF
+# define Acknowledge 0x00 //Returns info with command 0x41 [0x01: info, 0x00: no info]
+# define ACTIVATED LOW
 
 typedef enum
 {
@@ -79,6 +83,15 @@ static bool canReleaseFog;
 static bool flashLeds;
 static bool ledsIsOperational;
 
+//Speaker
+bool isPlaying = false;
+bool isStarted = false;
+bool isPlayFirst = true;
+int playTime = 200000;
+
+int buttonPause = 2;
+int endOfPlay;
+
 void setup()
 {
   // Serial
@@ -102,8 +115,8 @@ void setup()
   canReleaseFog = false;
 
   //speaker setup
-  speaker.setup();
-  speaker.setVolume(VOLUME);
+  speakerSetup();
+  speakerSetVolume(VOLUME);
 
   //LED setup
   flashLeds = false;
@@ -116,7 +129,7 @@ void loop()
   // Simple scheduler to call tick function with constant frequency
   int startTime = millis();
   fsmTick();
-  speaker.tick();
+  speakerTick();
   ledTick();
   fogTick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
@@ -195,7 +208,7 @@ void fsmTick()
       elapsedTimeMS = 0;
 
       //start speakers and leds
-      speaker.start();
+      speakerStart();
       ledsStart();
     }
 
@@ -212,9 +225,9 @@ void fsmTick()
       //forcefully end all speaker, fog and led show stuff
       state = SHUTDOWN;
       fogmachineTurnOff();
-      speaker.pause();
+      speakerPause();
       ledsFlash(false); //TODO:change the leds maybe
-    } else if (!speaker.getIsPlaying() && !ledsIsFlashing()) {
+    } else if (!speakerIsPlaying() && !ledsIsFlashing()) {
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
     }
@@ -410,4 +423,101 @@ void ledsStart() {
   ledsFlash(true);
 }
 
-//*************************************************************************
+//****************************** Speaker ********************************
+SoftwareSerial mySerial(10, 11);
+
+
+void speakerSetup() {
+
+  mySerial.begin(9600);
+
+  pinMode(buttonPause, INPUT);
+  digitalWrite(buttonPause,HIGH);
+  
+  // put your setup code here, to run once:
+  isPlaying = false;
+  speakerPause();
+}
+
+void speakerStart() {
+  if(!isPlaying){
+    isStarted = true;
+  }
+}
+
+void speakerTick() {
+  // put your main code here, to run repeatedly:
+
+  //Transitions
+  if (isPlaying) {
+    if (endOfPlay >= millis()) {
+      speakerPause();
+      isPlaying = false;
+    }
+  } else {
+    //!isPlaying
+    if (isStarted) {
+      isPlaying = true;
+      isStarted = false;
+      speakerPlayFirst();
+      endOfPlay = millis() + playTime;
+    }
+  }
+}
+
+void speakerPlayFirst()
+{
+  speakerExecuteCMD(0x3F, 0, 0);
+  delay(500);
+  speakerExecuteCMD(0x11,0,1); 
+  delay(500);
+  endOfPlay = millis() + playTime;
+}
+
+bool speakerIsPlaying() {
+  return isPlaying;
+}
+
+
+void speakerPlay()
+{
+  if (isPlayFirst){
+    speakerPlayFirst();
+  }
+  else{
+    execute_CMD(0x0D,0,1); 
+    delay(500);
+  }
+}
+
+void speakerPause()
+{
+  execute_CMD(0x0E,0,0);
+  delay(500);
+}
+
+void speakerPlayNext()
+{
+  execute_CMD(0x01,0,1);
+  delay(500);
+}
+
+void speakerSetVolume(int volume)
+{
+  execute_CMD(0x06, 0, volume); // Set the volume (0x00~0x30)
+  delay(2000);
+}
+
+void speakerExecuteCMD(uint8_t CMD, uint8_t Par1, uint8_t Par2)
+{
+  // Calculate the checksum (2 bytes)
+  word checksum = -(Version_Byte + Command_Length + CMD + Acknowledge + Par1 + Par2);
+  // Build the command line
+  uint8_t Command_line[10] = { Start_Byte, Version_Byte, Command_Length, CMD, Acknowledge,
+  Par1, Par2, highByte(checksum), lowByte(checksum), End_Byte};
+  //Send the command line to the module
+  for (uint8_t k=0; k<10; k++)
+  {
+  mySerial.write( Command_line[k]);
+  }
+}
