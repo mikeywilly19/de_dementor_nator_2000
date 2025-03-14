@@ -43,6 +43,7 @@ Speaker speaker = Speaker();
 // LED defines (ms)
 #define TIME_FLASHING 3000
 #define FLASH_DURATION 200
+#define LED_ON_TIME 5000 //5s
 
 //Speaker defines are found in Speaker.h
 
@@ -76,6 +77,7 @@ static bool canReleaseFog;
 
 //Leds state machine global variables
 static bool flashLeds;
+static bool ledsIsOperational;
 
 void setup()
 {
@@ -105,10 +107,12 @@ void setup()
 
   //LED setup
   flashLeds = false;
+  ledsIsOperational = false;
 }
 
 void loop()
 {
+  Serial.print("looping");
   // Simple scheduler to call tick function with constant frequency
   int startTime = millis();
   fsmTick();
@@ -193,10 +197,6 @@ void fsmTick()
       //start speakers and leds
       speaker.start();
       ledsStart();
-
-      //TODO:get rid of later
-      ledsFlash(true);
-      elapsedTimeMS = 0;
     }
 
     //action: wait for fog to release + amount of time for delaying the show
@@ -213,13 +213,10 @@ void fsmTick()
       state = SHUTDOWN;
       fogmachineTurnOff();
       speaker.pause();
-      ledsFlash(false); //TODO:change the leds
-    } else if (elapsedTimeMS >= SCHED_SHOW_TIME_BOUND) {
+      ledsFlash(false); //TODO:change the leds maybe
+    } else if (!speaker.getIsPlaying() && !ledsIsFlashing()) {
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
-
-      //TODO:get rid of later and add && !ledsIsFlashing()
-      ledsFlash(false);
     }
     
     //action: wait for all state machines to do their thing
@@ -339,7 +336,30 @@ void fogmachineTurnOff() {
 //LED state machine:
 //Desc: Initially is turned off until the variable flashLeds is set true.
 //      Once flashLeds is set true, the leds flash until flashLeds is set to false.
+
 void ledTick() {
+  static uint32_t elapsedLTimeMS = 0;
+  elapsedLTimeMS += FSM_TICK_PERIOD_MS;
+
+  if (ledsIsOperational) {
+    //transition
+    if (elapsedLTimeMS >= LED_ON_TIME) {
+      ledsIsOperational = false;
+      elapsedLTimeMS = 0;
+      ledsFlash(false);
+    }
+
+    //action
+    flashledTick();
+    elapsedLTimeMS += FSM_TICK_PERIOD_MS;
+  } else {
+    //no transition out
+
+    //action: do nothing
+  }
+}
+
+void flashledTick() {
   static ledState lState = OFF;
   static uint32_t elapsedLedTimeMS = 0;
   elapsedLedTimeMS += FSM_TICK_PERIOD_MS;
@@ -376,7 +396,7 @@ void ledsFlash(bool turnOn) {
   flashLeds = turnOn;
   if (flashLeds == false) {
     //Tick the state machine once to update the lights
-    ledTick();
+    flashledTick();
   }
 }
 
@@ -386,6 +406,8 @@ bool ledsIsFlashing() {
 
 void ledsStart() {
   //the start of a controller for the leds (because leds should be seperate from the scheduler)
+  ledsIsOperational = true;
+  ledsFlash(true);
 }
 
 //*************************************************************************
