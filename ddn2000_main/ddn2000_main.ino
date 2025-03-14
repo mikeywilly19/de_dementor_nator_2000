@@ -485,26 +485,26 @@ void speakerPlay()
     speakerPlayFirst();
   }
   else{
-    execute_CMD(0x0D,0,1); 
+    speakerExecuteCMD(0x0D,0,1); 
     delay(500);
   }
 }
 
 void speakerPause()
 {
-  execute_CMD(0x0E,0,0);
+  speakerExecuteCMD(0x0E,0,0);
   delay(500);
 }
 
 void speakerPlayNext()
 {
-  execute_CMD(0x01,0,1);
+  speakerExecuteCMD(0x01,0,1);
   delay(500);
 }
 
 void speakerSetVolume(int volume)
 {
-  execute_CMD(0x06, 0, volume); // Set the volume (0x00~0x30)
+  speakerExecuteCMD(0x06, 0, volume); // Set the volume (0x00~0x30)
   delay(2000);
 }
 
