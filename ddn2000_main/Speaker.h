@@ -13,7 +13,7 @@
 
 # define ACTIVATED LOW
 
-#define PLAY_TIME_TICKS 200000
+#define PLAY_TIME_MS 200000
 
 class Speaker {
 
