@@ -1,0 +1,2 @@
+
+#define FSM_TICK_PERIOD_MS 100

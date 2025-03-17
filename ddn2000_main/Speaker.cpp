@@ -9,6 +9,9 @@ void Speaker::setup() {
   // put your setup code here, to run once:
   mySerial.begin (9600);
   delay(3000);
+
+  setVolume(VOLUME);
+  
   isPlaying = false;
   pause();
 }
