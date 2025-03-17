@@ -11,14 +11,16 @@
  *            Winter 2025
  *            Steven Schultz
  **************************************/
-#include "Speaker.h"
-#include "LedBoard.h"
-#include "FogMachine.h"
-#include "globals.h"
+//#include "Speaker.h"
+//#include "LedBoard.h"
+//#include "FogMachine.h"
+//#include "globals.h"
 
-Speaker speaker = Speaker();
-LedBoard ledBoard = LedBoard();
-FogMachine fogMachine = FogMachine();
+#define FSM_TICK_PERIOD_MS 100
+
+//Speaker speaker = Speaker();
+//LedBoard ledBoard = LedBoard();
+//FogMachine fogMachine = FogMachine();
 
 // Pins
 #define FOG_TRIGGER
@@ -48,6 +50,7 @@ void setup()
 {
   // Serial
   Serial.begin(9600);
+  Serial.println("starting dementor machine");
 
   // set inputs
   // the sensor
@@ -59,19 +62,20 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
 
   // set outputs
-  fogMachine.setup();
-  ledBoard.setup();
-  speaker.setup();
+//  fogMachine.setup();
+//  ledBoard.setup();
+//  speaker.setup();
 }
 
 void loop()
 {
+  Serial.println("looping");
   // Simple scheduler to call tick function with constant frequency
   int startTime = millis();
   fsmTick();
-  fogMachine.tick();
-  ledBoard.tick();
-  speaker.tick();
+//  fogMachine.tick();
+//  ledBoard.tick();
+//  speaker.tick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
   }
@@ -97,7 +101,7 @@ void fsmTick()
   case INIT:
     if (isMachineOn) {
       state = WARMUP;
-      fogMachine.start();
+//      fogMachine.start();
     } else {
       state = SHUTDOWN;
     }
@@ -108,8 +112,9 @@ void fsmTick()
     //transition
     if (!isMachineOn) {
       state = SHUTDOWN;
-      fogMachine.stop();
-    } else if (fogMachine.canRelease()) {
+//      fogMachine.stop();
+    } else if (true) {
+      //fogMachine.canRelease()
       state = WAIT;
       elapsedTimeMS = 0;
 
@@ -124,11 +129,11 @@ void fsmTick()
     // transitions
     if (!isMachineOn) {
       state = SHUTDOWN;
-      fogMachine.stop();
+//      fogMachine.stop();
     } else if (digitalRead(PIR_SENSOR) || digitalRead(MANUAL_TRIGGER)) {
       //Someone walked by, start to trigger show
       state = STARTFOG;
-      fogMachine.release();
+//      fogMachine.release();
       elapsedTimeMS = 0;
 
       //Stop giving User notification as we release fog
@@ -142,14 +147,14 @@ void fsmTick()
     //transition
     if (!isMachineOn) {
       state = SHUTDOWN;
-      fogMachine.stop();
+//      fogMachine.stop();
     } else if (elapsedTimeMS >= SCHED_FOG_RELEASE_TIME) {
       state = STARTSHOW;
       elapsedTimeMS = 0;
 
       //start speakers and leds
-      speaker.start();
-      ledBoard.start();
+//      speaker.start();
+//      ledBoard.start();
     }
 
     //action: wait for fog to release + amount of time for delaying the show
@@ -164,10 +169,12 @@ void fsmTick()
     if (!isMachineOn) {
       //forcefully end all speaker, fog and led show stuff
       state = SHUTDOWN;
-      fogMachine.stop();
-      speaker.pause();
-      ledBoard.stop();
-    } else if (!speaker.getIsPlaying() && !ledBoard.isFlashing()) {
+//      fogMachine.stop();
+//      speaker.pause();
+//      ledBoard.stop();
+    } else if (true) {
+      //!speaker.getIsPlaying() && 
+      // !ledBoard.isFlashing()
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
     }
@@ -184,7 +191,7 @@ void fsmTick()
     if (isMachineOn) {
       //start warming up the fog machine for operation
       state = WARMUP;
-      fogMachine.start();
+//      fogMachine.start();
     }
 
     //action: machine is off, do nothing

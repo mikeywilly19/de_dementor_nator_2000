@@ -16,13 +16,23 @@ void FogMachine::setup() {
 }
 
 void FogMachine::setPinTurnOn(bool isTurnOn) {
+  printf("turned on/off\n");
 
 }
 
 void FogMachine::setPinRelease(bool isRelease) {
-
+  printf("released fog / stopped releasing fog\n");
 }
 
+void debugPrintState(fogState state) {
+  static fogState prevState = state;
+  static bool first = true;
+  if (first || prevState != state) {
+    prevState = state;
+    first = false;
+    printf("state:%d\n", state);
+  }
+}
 
 void FogMachine::tick() {
 
@@ -33,6 +43,8 @@ void FogMachine::tick() {
   
   //always keep track of how much time has passed (since last initialized to 0)
   elapsedFogTimeMS += FSM_TICK_PERIOD_MS;
+
+  debugPrintState(currFogState);
 
   switch(currFogState) {
     case FOG_COLD:
@@ -57,6 +69,8 @@ void FogMachine::tick() {
         setPinTurnOn(false);
       } else if (releaseFog) {
         currFogState = FOG_RELEASE;
+        releaseFog = false;
+        canReleaseFog = false;
         elapsedFogTimeMS = 0;
         setPinRelease(true);
       }
@@ -82,7 +96,7 @@ void FogMachine::tick() {
         setPinRelease(false);
 
         //TODO:since we just released the buildup time is smaller????
-        buildup_bound = FOG_RELEASE;
+        buildup_bound = FOG_BUILDUP_BOUND;
       }
 
       break;

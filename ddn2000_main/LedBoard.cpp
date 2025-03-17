@@ -8,10 +8,11 @@
 //      Once flashLeds is set true, the leds flash until flashLeds is set to false.
 
 void LedBoard::setup() {
+  printf("leds: setup reached\n");
   //output pins
-  pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT);
-  pinMode(YELLOW_PIN, OUTPUT);
+  // pinMode(GREEN_PIN, OUTPUT);
+  // pinMode(BLUE_PIN, OUTPUT);
+  // pinMode(YELLOW_PIN, OUTPUT);
 
   //LED setup
   flashLeds = false;
@@ -19,7 +20,7 @@ void LedBoard::setup() {
 }
 
 void LedBoard::tick() {
-  static uint32_t elapsedLTimeMS = 0;
+  static int elapsedLTimeMS = 0;
   elapsedLTimeMS += FSM_TICK_PERIOD_MS;
 
   if (ledsIsOperational) {
@@ -32,7 +33,6 @@ void LedBoard::tick() {
 
     //action
     flashTick();
-    elapsedLTimeMS += FSM_TICK_PERIOD_MS;
   } else {
     //no transition out
 
@@ -41,24 +41,35 @@ void LedBoard::tick() {
 }
 
 void LedBoard::writePins(bool isHigh) {
-  if (isHigh) {
-    digitalWrite(BLUE_PIN, HIGH);
-    digitalWrite(YELLOW_PIN, HIGH);
-    digitalWrite(GREEN_PIN, HIGH);
-  } else {
-    digitalWrite(BLUE_PIN, LOW);
-    digitalWrite(YELLOW_PIN, LOW);
-    digitalWrite(GREEN_PIN, LOW);
-  }
+  // if (isHigh) {
+  //   digitalWrite(BLUE_PIN, HIGH);
+  //   digitalWrite(YELLOW_PIN, HIGH);
+  //   digitalWrite(GREEN_PIN, HIGH);
+  // } else {
+  //   digitalWrite(BLUE_PIN, LOW);
+  //   digitalWrite(YELLOW_PIN, LOW);
+  //   digitalWrite(GREEN_PIN, LOW);
+  // }
 
   //debug: print what is written to the pins instead
   // printf("leds: (high is 1 low is 0): %d\n", isHigh);
 }
+
+void debugPrintFlashState(ledState state) {
+  static ledState prevState = state;
+  static bool first = true;
+  if (first || prevState != state) {
+    prevState = state;
+    first = false;
+    printf("state:%d\n", state);
+  }
+}
   
 void LedBoard::flashTick() {
   static ledState lState = OFF;
-  static uint32_t elapsedLedTimeMS = 0;
+  static int elapsedLedTimeMS = 0;
   elapsedLedTimeMS += FSM_TICK_PERIOD_MS;
+  debugPrintFlashState(lState);
 
   switch(lState) {
     case OFF:
@@ -97,6 +108,7 @@ bool LedBoard::isFlashing() {
 }
 
 void LedBoard::start() {
+  printf("called start\n");
   //the start of a controller for the leds (because leds should be seperate from the scheduler)
   ledsIsOperational = true;
   flash(true);

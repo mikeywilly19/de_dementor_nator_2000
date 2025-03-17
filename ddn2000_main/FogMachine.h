@@ -1,8 +1,9 @@
+#ifndef FOG_MACHINE_H
+#define FOG_MACHINE_H
 
-#include "Arduino.h" //TODO: uncomment when using the arduino
+ #include "Arduino.h" //TODO: uncomment when using the arduino
+//#include <iostream>
 #include "globals.h"
-
-#define FSM_TICK_PERIOD_MS 2000
 
 #define FOG_BUILDUP_BOUND 2000 //2s
 #define FOG_BUILDUP_BOUND_FROM_RELEASE 1000 //1s
@@ -36,3 +37,5 @@ class FogMachine {
     void setPinRelease(bool isRelease);
 
 };
+
+#endif

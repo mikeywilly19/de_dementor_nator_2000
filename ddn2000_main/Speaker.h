@@ -10,9 +10,10 @@
 # define Command_Length 0x06
 # define End_Byte 0xEF
 # define Acknowledge 0x00 //Returns info with command 0x41 [0x01: info, 0x00: no info]
-#define VOLUME 20
 
 # define ACTIVATED LOW
+
+#define PLAY_TIME_TICKS 200000
 
 class Speaker {
 
@@ -20,7 +21,6 @@ class Speaker {
     bool isPlaying = false;
     bool isStarted = false;
     bool isPlayFirst = true;
-    int playTime = 200000;
 
     int buttonPause = 2;
     int endOfPlay;

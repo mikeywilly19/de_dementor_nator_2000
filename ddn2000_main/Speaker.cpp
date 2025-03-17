@@ -37,7 +37,7 @@ void Speaker::tick() {
       isPlaying = true;
       isStarted = false;
       playFirst();
-      endOfPlay = millis() + playTime;
+      endOfPlay = millis() + PLAY_TIME_TICKS;
     }
   }
 }
@@ -48,7 +48,7 @@ void Speaker::playFirst()
   delay(500);
   execute_CMD(0x11,0,1); 
   delay(500);
-  endOfPlay = millis() + playTime;
+  endOfPlay = millis() + PLAY_TIME_TICKS;
 }
 
 bool Speaker::getIsPlaying() {
