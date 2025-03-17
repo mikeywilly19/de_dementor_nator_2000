@@ -10,7 +10,7 @@
 #define GREEN_PIN 6
 
 //all in milli seconds
-#define LED_SHOW_DURATION 2000
+#define LED_SHOW_DURATION (SHOW_DURATION_MS)
 #define LED_FLASHING_ON_TIME 500
 #define LED_FLASHING_OFF_TIME 500
 
