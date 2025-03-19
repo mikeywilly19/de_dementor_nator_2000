@@ -34,8 +34,6 @@ void FogMachine::setPinTurnOn(bool isTurnOn) {
 }
 
 void FogMachine::setPinRelease(bool isRelease) {
-  Serial.println("release:");
-  Serial.println(isRelease);
   printf("released fog / stopped releasing fog\n");
   if (isRelease) {
     digitalWrite(RELEASE_PIN, HIGH);
@@ -65,8 +63,6 @@ void FogMachine::tick() {
   elapsedFogTimeMS += FSM_TICK_PERIOD_MS;
 
   debugPrintState(currFogState);
-  Serial.println("fogstate");
-  Serial.println(currFogState);
 
   switch(currFogState) {
     case FOG_COLD:
