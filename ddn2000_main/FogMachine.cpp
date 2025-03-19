@@ -9,19 +9,39 @@
 //      this state machine will start warming up and spew fog respectivley.
 
 void FogMachine::setup() {
+  //pinmodes
+  pinMode(WARMUP_PIN, OUTPUT);
+  pinMode(RELEASE_PIN, OUTPUT);
+  
   //Fog machine
   startBuildup = false;
   releaseFog = false;
   canReleaseFog = false;
+
+  setPinTurnOn(false);
+  setPinRelease(false);
 }
 
 void FogMachine::setPinTurnOn(bool isTurnOn) {
   printf("turned on/off\n");
-
+  //A7: release 
+  //A6: warmup
+  if (isTurnOn) {
+    digitalWrite(WARMUP_PIN, HIGH);
+   } else {
+    digitalWrite(WARMUP_PIN, LOW);
+   }
 }
 
 void FogMachine::setPinRelease(bool isRelease) {
+  Serial.println("release:");
+  Serial.println(isRelease);
   printf("released fog / stopped releasing fog\n");
+  if (isRelease) {
+    digitalWrite(RELEASE_PIN, HIGH);
+  } else {
+    digitalWrite(RELEASE_PIN, LOW);
+  }
 }
 
 void debugPrintState(fogState state) {
@@ -45,6 +65,8 @@ void FogMachine::tick() {
   elapsedFogTimeMS += FSM_TICK_PERIOD_MS;
 
   debugPrintState(currFogState);
+  Serial.println("fogstate");
+  Serial.println(currFogState);
 
   switch(currFogState) {
     case FOG_COLD:
