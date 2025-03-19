@@ -27,6 +27,7 @@ void LedBoard::tick() {
   if (ledsIsOperational) {
     //transition
     if (elapsedLTimeMS >= LED_SHOW_DURATION) {
+      Serial.println("Time Elapsed");
       ledsIsOperational = false;
       elapsedLTimeMS = 0;
       flash(false);
@@ -36,6 +37,7 @@ void LedBoard::tick() {
     flashTick();
   } else {
     //no transition out
+    elapsedLTimeMS = 0;
 
     //action: do nothing
   }
@@ -105,14 +107,18 @@ void LedBoard::flash(bool turnOn) {
 }
 
 bool LedBoard::isFlashing() {
-  return flashLeds;
+  Serial.println("operation");
+  Serial.println(ledsIsOperational);
+  return ledsIsOperational;
 }
 
 void LedBoard::start() {
-  printf("called start\n");
+  Serial.println("called start\n");
   //the start of a controller for the leds (because leds should be seperate from the scheduler)
   ledsIsOperational = true;
   flash(true);
+  Serial.println("operational");
+  Serial.println(ledsIsOperational);
 }
 
 //*************************************************************************
