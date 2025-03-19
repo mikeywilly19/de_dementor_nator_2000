@@ -1,12 +1,12 @@
-//#include <iostream>
-//#include <unistd.h>
-//#include "LedBoard.h"
-//#include "globals.h"
-//
-//void tick(LedBoard* ledBoard) {
+// #include <iostream>
+// #include <unistd.h>
+// #include "LedBoard.h"
+// #include "globals.h"
+
+// void tick(LedBoard* ledBoard) {
 //    static int state = 0;
 //    static int count = 0;
-//
+
 //    switch (state) {
 //        case (0):
 //            //leave off for half a second
@@ -15,7 +15,7 @@
 //                count = 0;
 //                ledBoard->start();
 //            }
-//
+
 //            count++;
 //        break;
 //        case (1):
@@ -25,7 +25,7 @@
 //                state = 2;
 //                count = 0;
 //            }
-//
+
 //            count++;
 //        break;
 //        case (2):
@@ -34,17 +34,17 @@
 //        default:
 //        break;
 //    };
-//}
-//
-//int main() {
+// }
+
+// int main() {
 //    printf("hello world\n");
 //    LedBoard ledBoard = LedBoard();
 //    ledBoard.setup();
-//
+
 //    while(true) {
 //        tick(&ledBoard);
 //        ledBoard.tick();
 //        usleep(FSM_TICK_PERIOD_MS * 1000);
 //    }
 //    return 0;
-//}
+// }

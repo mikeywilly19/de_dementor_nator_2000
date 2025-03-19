@@ -10,13 +10,14 @@
 void LedBoard::setup() {
   printf("leds: setup reached\n");
   //output pins
-  // pinMode(GREEN_PIN, OUTPUT);
-  // pinMode(BLUE_PIN, OUTPUT);
-  // pinMode(YELLOW_PIN, OUTPUT);
+   pinMode(GREEN_PIN, OUTPUT);
+   pinMode(BLUE_PIN, OUTPUT);
+   pinMode(YELLOW_PIN, OUTPUT);
 
   //LED setup
   flashLeds = false;
   ledsIsOperational = false;
+  writePins(false);
 }
 
 void LedBoard::tick() {
@@ -41,15 +42,15 @@ void LedBoard::tick() {
 }
 
 void LedBoard::writePins(bool isHigh) {
-  // if (isHigh) {
-  //   digitalWrite(BLUE_PIN, HIGH);
-  //   digitalWrite(YELLOW_PIN, HIGH);
-  //   digitalWrite(GREEN_PIN, HIGH);
-  // } else {
-  //   digitalWrite(BLUE_PIN, LOW);
-  //   digitalWrite(YELLOW_PIN, LOW);
-  //   digitalWrite(GREEN_PIN, LOW);
-  // }
+   if (isHigh) {
+     digitalWrite(BLUE_PIN, HIGH);
+     digitalWrite(YELLOW_PIN, HIGH);
+     digitalWrite(GREEN_PIN, HIGH);
+   } else {
+     digitalWrite(BLUE_PIN, LOW);
+     digitalWrite(YELLOW_PIN, LOW);
+     digitalWrite(GREEN_PIN, LOW);
+   }
 
   //debug: print what is written to the pins instead
   // printf("leds: (high is 1 low is 0): %d\n", isHigh);

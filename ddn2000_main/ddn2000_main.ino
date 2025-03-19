@@ -11,12 +11,12 @@
  *            Winter 2025
  *            Steven Schultz
  **************************************/
-#include "Speaker.h"
+//#include "Speaker.h"
 #include "LedBoard.h"
 #include "FogMachine.h"
 #include "globals.h"
 
-Speaker speaker = Speaker();
+//Speaker speaker = Speaker();
 LedBoard ledBoard = LedBoard();
 FogMachine fogMachine = FogMachine();
 
@@ -48,6 +48,8 @@ void setup()
 {
   // Serial
   Serial.begin(9600);
+  delay(2000);
+  Serial.println("wstarting");
 
   // set inputs
   // the sensor
@@ -61,7 +63,7 @@ void setup()
   // set outputs
   fogMachine.setup();
   ledBoard.setup();
-  speaker.setup();
+//  speaker.setup();
 }
 
 void loop()
@@ -71,7 +73,7 @@ void loop()
   fsmTick();
   fogMachine.tick();
   ledBoard.tick();
-  speaker.tick();
+//  speaker.tick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
   }
@@ -91,6 +93,8 @@ void fsmTick()
 
   //TODO: update isMachineOn with the value of a switch (not a fixed value)
   isMachineOn = true;
+
+  
 
   switch (state)
   {
@@ -148,7 +152,7 @@ void fsmTick()
       elapsedTimeMS = 0;
 
       //start speakers and leds
-      speaker.start();
+//      speaker.start();
       ledBoard.start();
     }
 
@@ -165,9 +169,10 @@ void fsmTick()
       //forcefully end all speaker, fog and led show stuff
       state = SHUTDOWN;
       fogMachine.stop();
-      speaker.pause();
+//      speaker.pause();
       ledBoard.stop();
-    } else if (!speaker.getIsPlaying() && !ledBoard.isFlashing()) {
+    } else if (!ledBoard.isFlashing()) {
+      //!speaker.getIsPlaying() && 
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
     }
@@ -193,4 +198,6 @@ void fsmTick()
   default:
     break;
   }
+
+  Serial.println(state);
 }
