@@ -16,12 +16,12 @@
 #include "FogMachine.h"
 #include "globals.h"
 
-//Speaker speaker = Speaker();
+Speaker speaker = Speaker();
 LedBoard ledBoard = LedBoard();
 FogMachine fogMachine = FogMachine();
 
 // Pins
-#define SOUND_TRIGGER
+#define SOUND_TRIGGER 
 #define PIR_SENSOR A5
 #define MANUAL_TRIGGER A3
 
@@ -33,10 +33,10 @@ FogMachine fogMachine = FogMachine();
 #define SCHED_FOG_RELEASE_TIME 1000 //1s
 
 // State LEDs
-#define WARMUP_LED 9
-#define WAITING_LED 10
-#define STARTFOG_LED 11
-#define SHUTDOWN_LED 12
+#define WARMUP_LED A2
+#define WAITING_LED A1
+#define STARTFOG_LED A0
+//#define SHUTDOWN_LED
 
 typedef enum
 {
@@ -68,10 +68,10 @@ void setup()
   pinMode(WARMUP_LED, OUTPUT);
   pinMode(WAITING_LED, OUTPUT);
   pinMode(STARTFOG_LED, OUTPUT);
-  pinMode(SHUTDOWN_LED, OUTPUT);
+  //pinMode(SHUTDOWN_LED, OUTPUT);
   fogMachine.setup();
   ledBoard.setup();
-//  speaker.setup();
+  speaker.setup();
 }
 
 void loop()
@@ -81,7 +81,7 @@ void loop()
   fsmTick();
   fogMachine.tick();
   ledBoard.tick();
-//  speaker.tick();
+  speaker.tick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
 //    Serial.print("Current Time: ");
@@ -120,7 +120,7 @@ void fsmTick()
     
     break;
   case WARMUP:
-    digitalWrite(SHUTDOWN_LED, LOW); // state light off
+    digitalWrite(STARTFOG_LED, LOW); // state light off
     digitalWrite(WARMUP_LED, HIGH); // state light on
     
     //transition
@@ -174,7 +174,7 @@ void fsmTick()
       elapsedTimeMS = 0;
 
       //start speakers and leds
-//      speaker.start();
+      speaker.start();
       ledBoard.start();
     }
 
@@ -191,9 +191,9 @@ void fsmTick()
       //forcefully end all speaker, fog and led show stuff
       state = SHUTDOWN;
       fogMachine.stop();
-//      speaker.pause();
+      speaker.stop();
       ledBoard.stop();
-    } else if ( !ledBoard.isFlashing()) { // !speaker.getIsPlaying() &&
+    } else if ( !speaker.isPlaying() && !ledBoard.isFlashing()) {
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
     }
@@ -203,9 +203,6 @@ void fsmTick()
     
     break;
   case SHUTDOWN:
-    digitalWrite(STARTFOG_LED, LOW); // state light off
-    digitalWrite(SHUTDOWN_LED, HIGH); // state light on
-    
     // stop everything on entering this state 
     // (this is also initially where everything is off)
     

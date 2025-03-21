@@ -6,14 +6,14 @@
 #include <SoftwareSerial.h>
 #define FSM_TICK_PERIOD_MS 100
 
+static SoftwareSerial softSerial(10, 11);
+static DFRobotDFPlayerMini myDFPlayer;
+
 #define FPSerial softSerial
 
 class Speaker {
 
   public:
-
-  SoftwareSerial softSerial(10, 11);
-  DFRobotDFPlayerMini myDFPlayer;
   bool isStarted = false;
   
   int state = 0;
@@ -25,7 +25,7 @@ class Speaker {
   void stop();
   void tick();
 
-  bool getIsPlaying();
+  bool isPlaying();
 
 };
 

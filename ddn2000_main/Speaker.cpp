@@ -108,7 +108,7 @@ void Speaker::stop() {
   //stop the state machine
 }
 
-bool Speaker::IsPlaying() {
+bool Speaker::isPlaying() {
   return state == 1;
 }
 
@@ -182,5 +182,3 @@ void Speaker::tick()
 
   
 }
-
-
