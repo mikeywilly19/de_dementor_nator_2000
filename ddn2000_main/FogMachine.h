@@ -5,9 +5,9 @@
 //#include <iostream>
 #include "globals.h"
 
-#define FOG_BUILDUP_BOUND 2000 //2s
-#define FOG_BUILDUP_BOUND_FROM_RELEASE 1000 //1s
-#define FOG_RELEASE_BOUND 2000 //2s
+#define FOG_BUILDUP_BOUND 180000 // Warmup Time - 3 minutes
+#define FOG_BUILDUP_BOUND_FROM_RELEASE 60000 // Warmup time after Trigger - 1 minute
+#define FOG_RELEASE_BOUND 2000 // Time to hold release button on
 
 #define WARMUP_PIN 7
 #define RELEASE_PIN 8

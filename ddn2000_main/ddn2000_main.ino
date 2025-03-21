@@ -32,6 +32,12 @@ FogMachine fogMachine = FogMachine();
 #define SCHED_SHOW_TIME_BOUND 10000 //1s (be greater than 201)
 #define SCHED_FOG_RELEASE_TIME 1000 //1s
 
+// State LEDs
+#define WARMUP_LED 9
+#define WAITING_LED 10
+#define STARTFOG_LED 11
+#define SHUTDOWN_LED 12
+
 typedef enum
 {
   INIT,
@@ -59,6 +65,10 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
 
   // set outputs
+  pinMode(WARMUP_LED, OUTPUT);
+  pinMode(WAITING_LED, OUTPUT);
+  pinMode(STARTFOG_LED, OUTPUT);
+  pinMode(SHUTDOWN_LED, OUTPUT);
   fogMachine.setup();
   ledBoard.setup();
 //  speaker.setup();
@@ -67,13 +77,17 @@ void setup()
 void loop()
 {
   // Simple scheduler to call tick function with constant frequency
-  int startTime = millis();
+  uint32_t startTime = millis();
   fsmTick();
   fogMachine.tick();
   ledBoard.tick();
 //  speaker.tick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
+//    Serial.print("Current Time: ");
+//    Serial.print(millis());
+//    Serial.print("Time to go: ");
+//    Serial.println(startTime + FSM_TICK_PERIOD_MS);
   }
 }
 
@@ -106,7 +120,9 @@ void fsmTick()
     
     break;
   case WARMUP:
-    //warm up the fog machine until it is ready to be released
+    digitalWrite(SHUTDOWN_LED, LOW); // state light off
+    digitalWrite(WARMUP_LED, HIGH); // state light on
+    
     //transition
     if (!isMachineOn) {
       state = SHUTDOWN;
@@ -120,9 +136,12 @@ void fsmTick()
     }
 
     //action: wait for the fog machine to warm up
-    
+
     break;
   case WAIT:
+    digitalWrite(WARMUP_LED, LOW); // state light off
+    digitalWrite(WAITING_LED, HIGH); // state light on
+  
     // transitions
     if (!isMachineOn) {
       state = SHUTDOWN;
@@ -141,9 +160,11 @@ void fsmTick()
     }
 
     // no actions
-    
+
     break;
   case STARTFOG:
+    digitalWrite(WAITING_LED, LOW); // state light off
+    digitalWrite(STARTFOG_LED, HIGH); // state light on
     //transition
     if (!isMachineOn) {
       state = SHUTDOWN;
@@ -159,7 +180,7 @@ void fsmTick()
 
     //action: wait for fog to release + amount of time for delaying the show
     elapsedTimeMS += FSM_TICK_PERIOD_MS;
-    
+
     break;
   case STARTSHOW:
     //In this state the fog should have already released and the
@@ -182,6 +203,9 @@ void fsmTick()
     
     break;
   case SHUTDOWN:
+    digitalWrite(STARTFOG_LED, LOW); // state light off
+    digitalWrite(SHUTDOWN_LED, HIGH); // state light on
+    
     // stop everything on entering this state 
     // (this is also initially where everything is off)
     
@@ -193,7 +217,7 @@ void fsmTick()
     }
 
     //action: machine is off, do nothing
-    
+
     break;
   default:
     break;
