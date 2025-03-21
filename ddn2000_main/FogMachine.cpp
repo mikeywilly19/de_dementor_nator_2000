@@ -114,7 +114,7 @@ void FogMachine::tick() {
         setPinRelease(false);
 
         //TODO:since we just released the buildup time is smaller????
-        buildup_bound = FOG_BUILDUP_BOUND;
+        buildup_bound = FOG_BUILDUP_BOUND_FROM_RELEASE;
       }
 
       break;

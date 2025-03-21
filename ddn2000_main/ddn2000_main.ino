@@ -29,7 +29,7 @@ FogMachine fogMachine = FogMachine();
 // Scheduler
 #define SCHED_WARMUP_TIME 1000 // 1s
 #define SCHED_FOG_BUILDUP_TIME 1000 //1s
-#define SCHED_SHOW_TIME_BOUND 10000 //1s (be greater than 201)
+#define SCHED_SHOW_TIME_BOUND 6000 //1s (be greater than 201)
 #define SCHED_FOG_RELEASE_TIME 1000 //1s
 
 // State LEDs
