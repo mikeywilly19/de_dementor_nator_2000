@@ -11,8 +11,8 @@
 
 //all in milli seconds
 #define LED_SHOW_DURATION (SHOW_DURATION_MS)
-#define LED_FLASHING_ON_TIME 500
-#define LED_FLASHING_OFF_TIME 500
+#define LED_FLASHING_ON_TIME 200
+#define LED_FLASHING_OFF_TIME 200
 
 typedef enum
 {

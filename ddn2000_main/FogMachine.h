@@ -9,8 +9,8 @@
 #define FOG_BUILDUP_BOUND_FROM_RELEASE 1000 //1s
 #define FOG_RELEASE_BOUND 2000 //2s
 
-#define WARMUP_PIN A6
-#define RELEASE_PIN A7
+#define WARMUP_PIN 7
+#define RELEASE_PIN 8
 
 typedef enum
 {
