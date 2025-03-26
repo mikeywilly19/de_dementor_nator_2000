@@ -1,8 +1,8 @@
 // Smoke Maker Test code
 
 
-#define SMOKER_POWER_PIN 2
-#define BUTTON_PIN A4
+#define SMOKER_POWER_PIN 8
+#define BUTTON_PIN A3
 #define LED_PIN 13
 
 void setup() {
