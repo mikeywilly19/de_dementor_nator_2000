@@ -21,9 +21,7 @@ LedBoard ledBoard = LedBoard();
 FogMachine fogMachine = FogMachine();
 
 // Pins
-#define FOG_TRIGGER
-#define FOG_WARMUP
-#define SOUND_TRIGGER
+#define SOUND_TRIGGER 
 #define PIR_SENSOR A5
 #define MANUAL_TRIGGER A3
 
@@ -31,8 +29,14 @@ FogMachine fogMachine = FogMachine();
 // Scheduler
 #define SCHED_WARMUP_TIME 1000 // 1s
 #define SCHED_FOG_BUILDUP_TIME 1000 //1s
-#define SCHED_SHOW_TIME_BOUND 10000 //1s (be greater than 201)
+#define SCHED_SHOW_TIME_BOUND 6000 //1s (be greater than 201)
 #define SCHED_FOG_RELEASE_TIME 1000 //1s
+
+// State LEDs
+#define WARMUP_LED A2
+#define WAITING_LED A1
+#define STARTFOG_LED A0
+//#define SHUTDOWN_LED
 
 typedef enum
 {
@@ -61,6 +65,10 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
 
   // set outputs
+  pinMode(WARMUP_LED, OUTPUT);
+  pinMode(WAITING_LED, OUTPUT);
+  pinMode(STARTFOG_LED, OUTPUT);
+  //pinMode(SHUTDOWN_LED, OUTPUT);
   fogMachine.setup();
   ledBoard.setup();
   speaker.setup();
@@ -69,13 +77,17 @@ void setup()
 void loop()
 {
   // Simple scheduler to call tick function with constant frequency
-  int startTime = millis();
+  uint32_t startTime = millis();
   fsmTick();
   fogMachine.tick();
   ledBoard.tick();
   speaker.tick();
   while ((startTime + FSM_TICK_PERIOD_MS) > millis())
   {
+//    Serial.print("Current Time: ");
+//    Serial.print(millis());
+//    Serial.print("Time to go: ");
+//    Serial.println(startTime + FSM_TICK_PERIOD_MS);
   }
 }
 
@@ -94,7 +106,7 @@ void fsmTick()
   //TODO: update isMachineOn with the value of a switch (not a fixed value)
   isMachineOn = true;
 
-  
+
 
   switch (state)
   {
@@ -108,7 +120,9 @@ void fsmTick()
     
     break;
   case WARMUP:
-    //warm up the fog machine until it is ready to be released
+    digitalWrite(STARTFOG_LED, LOW); // state light off
+    digitalWrite(WARMUP_LED, HIGH); // state light on
+    
     //transition
     if (!isMachineOn) {
       state = SHUTDOWN;
@@ -122,14 +136,20 @@ void fsmTick()
     }
 
     //action: wait for the fog machine to warm up
-    
+
     break;
   case WAIT:
+    digitalWrite(WARMUP_LED, LOW); // state light off
+    digitalWrite(WAITING_LED, HIGH); // state light on
+  
     // transitions
     if (!isMachineOn) {
       state = SHUTDOWN;
       fogMachine.stop();
     } else if (digitalRead(PIR_SENSOR) || digitalRead(MANUAL_TRIGGER)) {
+      if(digitalRead(PIR_SENSOR)) {
+        Serial.println("Motion Sensor");
+      }
       //Someone walked by, start to trigger show
       state = STARTFOG;
       fogMachine.release();
@@ -140,9 +160,11 @@ void fsmTick()
     }
 
     // no actions
-    
+
     break;
   case STARTFOG:
+    digitalWrite(WAITING_LED, LOW); // state light off
+    digitalWrite(STARTFOG_LED, HIGH); // state light on
     //transition
     if (!isMachineOn) {
       state = SHUTDOWN;
@@ -158,7 +180,7 @@ void fsmTick()
 
     //action: wait for fog to release + amount of time for delaying the show
     elapsedTimeMS += FSM_TICK_PERIOD_MS;
-    
+
     break;
   case STARTSHOW:
     //In this state the fog should have already released and the
@@ -169,9 +191,9 @@ void fsmTick()
       //forcefully end all speaker, fog and led show stuff
       state = SHUTDOWN;
       fogMachine.stop();
-      speaker.pause();
+      speaker.stop();
       ledBoard.stop();
-    } else if (!speaker.getIsPlaying() && !ledBoard.isFlashing()) {
+    } else if ( !speaker.isPlaying() && !ledBoard.isFlashing()) {
       //finished show, go back to warmup for next show (since the machine is still on)
       state = WARMUP;
     }
@@ -192,7 +214,7 @@ void fsmTick()
     }
 
     //action: machine is off, do nothing
-    
+
     break;
   default:
     break;

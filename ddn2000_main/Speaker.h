@@ -1,49 +1,31 @@
 #ifndef CLASS_SPEAKER
 #define CLASS_SPEAKER
 
-#include "SoftwareSerial.h"
 #include "Arduino.h"
-#include "globals.h"
+#include "DFRobotDFPlayerMini.h"
+#include <SoftwareSerial.h>
+#define FSM_TICK_PERIOD_MS 100
 
-# define Start_Byte 0x7E
-# define Version_Byte 0xFF
-# define Command_Length 0x06
-# define End_Byte 0xEF
-# define Acknowledge 0x00 //Returns info with command 0x41 [0x01: info, 0x00: no info]
+static SoftwareSerial softSerial(10, 11);
+static DFRobotDFPlayerMini myDFPlayer;
 
-# define ACTIVATED LOW
-
-#define PLAY_TIME_MS 200000
+#define FPSerial softSerial
 
 class Speaker {
 
-   public:
-   bool isPlaying = false;
-   bool isStarted = false;
-   bool isPlayFirst = true;
+  public:
+  bool isStarted = false;
+  
+  int state = 0;
+  uint32_t count = 0;
+  bool first = true;
 
-   int buttonPause = 2;
-   int endOfPlay;
+  void setup();
+  void start();
+  void stop();
+  void tick();
 
-   void setup();
-
-   void start();
-
-   void tick();
-
-   void playFirst();
-
-   void play();
-
-   void pause();
-
-   void playNext();
-
-   void setVolume(int volume);
-
-   bool getIsPlaying();
-
-   void execute_CMD(uint8_t CMD, uint8_t Par1, uint8_t Par2);
+  bool isPlaying();
 
 };
 

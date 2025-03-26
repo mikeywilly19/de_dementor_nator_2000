@@ -27,18 +27,18 @@ void FogMachine::setPinTurnOn(bool isTurnOn) {
   //A7: release 
   //A6: warmup
   if (isTurnOn) {
-    digitalWrite(WARMUP_PIN, HIGH);
-   } else {
     digitalWrite(WARMUP_PIN, LOW);
+   } else {
+    digitalWrite(WARMUP_PIN, HIGH);
    }
 }
 
 void FogMachine::setPinRelease(bool isRelease) {
   printf("released fog / stopped releasing fog\n");
   if (isRelease) {
-    digitalWrite(RELEASE_PIN, HIGH);
-  } else {
     digitalWrite(RELEASE_PIN, LOW);
+  } else {
+    digitalWrite(RELEASE_PIN, HIGH);
   }
 }
 
@@ -114,7 +114,7 @@ void FogMachine::tick() {
         setPinRelease(false);
 
         //TODO:since we just released the buildup time is smaller????
-        buildup_bound = FOG_BUILDUP_BOUND;
+        buildup_bound = FOG_BUILDUP_BOUND_FROM_RELEASE;
       }
 
       break;
