@@ -112,7 +112,7 @@ void FogMachine::tick() {
         elapsedFogTimeMS = 0;
         setPinTurnOn(false);
         setPinRelease(false);
-      } else if (elapsedFogTimeMS >= FOG_RELEASE_BOUND) {
+      } else if (elapsedFogTimeMS >= FOG_RELEASE_BOUND + 1000) {
         currFogState = FOG_BUILDUP;
         elapsedFogTimeMS = 0;
         canReleaseFog = false;
@@ -138,12 +138,9 @@ void FogMachine::start() {
   startBuildup = true;
 }
 
-void FogMachine::release(bool isRelease) {
-  if (isRelease && canReleaseFog) {
+void FogMachine::release() {
+  if (canReleaseFog) {
     releaseFog = true;
-  }
-  if (!isRelease) {
-    releaseFog = false;
   }
   //else there is no notification that there can't be a release for fog
 }
