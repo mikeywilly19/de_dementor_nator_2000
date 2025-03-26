@@ -98,6 +98,11 @@ void FogMachine::tick() {
         canReleaseFog = true;
       }
 
+      //when the buildup bound reaches the pin depress bound stop pressing release
+      if (elapsedFogTimeMS >= FOG_PIN_DEPRESS_BOUND && elapsedFogTimeMS < buildup_bound) {
+        setPinRelease(false);
+      }
+
       break;
     case FOG_RELEASE:
       //transition
@@ -111,10 +116,16 @@ void FogMachine::tick() {
         currFogState = FOG_BUILDUP;
         elapsedFogTimeMS = 0;
         canReleaseFog = false;
-        setPinRelease(false);
+        setPinRelease(true);
 
         //TODO:since we just released the buildup time is smaller????
         buildup_bound = FOG_BUILDUP_BOUND_FROM_RELEASE;
+      }
+
+      //action
+      //when the buildup bound reaches the pin depress bound stop pressing release
+      if (elapsedFogTimeMS >= FOG_PIN_DEPRESS_BOUND && elapsedFogTimeMS < FOG_RELEASE_BOUND) {
+        setPinRelease(false);
       }
 
       break;
@@ -127,9 +138,12 @@ void FogMachine::start() {
   startBuildup = true;
 }
 
-void FogMachine::release() {
-  if (canReleaseFog) {
+void FogMachine::release(bool isRelease) {
+  if (isRelease && canReleaseFog) {
     releaseFog = true;
+  }
+  if (!isRelease) {
+    releaseFog = false;
   }
   //else there is no notification that there can't be a release for fog
 }
